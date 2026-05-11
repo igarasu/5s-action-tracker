@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5S Action Tracker</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#2563eb;--primary-hover:#1d4ed8;--primary-light:#dbeafe;
+  --red:#ef4444;--red-bg:#fef2f2;--red-border:#fecaca;
+  --amber:#f59e0b;--amber-bg:#fffbeb;--amber-border:#fde68a;
+  --blue:#3b82f6;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  --green:#22c55e;--green-bg:#f0fdf4;--green-border:#bbf7d0;
+  --gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-300:#d1d5db;
+  --gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;--gray-800:#1f2937;--gray-900:#111827;
+  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);
+  --radius:8px;--radius-lg:12px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Sans",sans-serif;
+  --transition:all .2s ease;
+}
+body{font-family:var(--font);background:var(--gray-50);color:var(--gray-800);line-height:1.6;min-height:100vh}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none}
+input,select,textarea{font-family:var(--font);outline:none}
+
+/* Header */
+.header{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid var(--gray-200);box-shadow:var(--shadow)}
+.header-inner{max-width:900px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.header h1{font-size:1.25rem;font-weight:700;color:var(--primary);white-space:nowrap}
+.nav{display:flex;gap:4px}
+.nav button{padding:8px 14px;border-radius:var(--radius);font-size:.875rem;font-weight:500;color:var(--gray-600);background:transparent;transition:var(--transition)}
+.nav button:hover{background:var(--gray-100)}
+.nav button.active{background:var(--primary);color:#fff}
+
+/* Site selector */
+.site-selector{display:flex;align-items:center;gap:8px;width:100%}
+.site-selector label{font-size:.8rem;color:var(--gray-500);white-space:nowrap}
+.site-selector select{flex:1;padding:6px 10px;border:1px solid var(--gray-200);border-radius:var(--radius);font-size:.85rem;background:#fff}
+
+/* Main */
+.main{max-width:900px;margin:0 auto;padding:16px}
+
+/* Add button */
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:var(--primary);color:#fff;border-radius:var(--radius-lg);font-size:1rem;font-weight:600;box-shadow:var(--shadow-md);transition:var(--transition);margin-bottom:20px}
+.add-btn:hover{background:var(--primary-hover);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.add-btn:active{transform:translateY(0)}
+
+/* Cards */
+.card{background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow);border:1px solid var(--gray-200);margin-bottom:12px;overflow:hidden;transition:var(--transition)}
+.card:hover{box-shadow:var(--shadow-md)}
+.card-body{padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.card-photo{width:56px;height:56px;border-radius:var(--radius);object-fit:cover;background:var(--gray-100);flex-shrink:0}
+.card-photo-placeholder{width:56px;height:56px;border-radius:var(--radius);background:var(--gray-100);display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:1.5rem;flex-shrink:0}
+.card-content{flex:1;min-width:0}
+.card-title{font-size:.95rem;font-weight:600;color:var(--gray-800);margin-bottom:4px;word-break:break-word}
+.card-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.badge-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.badge-blue{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.category-badge{padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600}
+.card-due{font-size:.75rem;color:var(--gray-500)}
+.card-pocs{font-size:.75rem;color:var(--gray-500)}
+.card-actions{display:flex;gap:4px;flex-shrink:0;align-items:flex-start}
+.card-actions button{padding:6px;border-radius:var(--radius);background:transparent;color:var(--gray-400);transition:var(--transition);font-size:1rem}
+.card-actions button:hover{background:var(--gray-100);color:var(--gray-700)}
+.card-actions .delete-btn:hover{background:var(--red-bg);color:var(--red)}
+
+/* Status select */
+.status-select{padding:4px 8px;border-radius:var(--radius);font-size:.75rem;font-weight:600;border:1px solid;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;padding-right:20px}
+.status-red{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.status-amber{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-border)}
+.status-blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border)}
+.status-green{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s ease}
+.modal-overlay.open .modal{transform:translateY(0)}
+@media(min-width:640px){.modal{border-radius:var(--radius-lg);margin-bottom:auto;margin-top:auto;max-height:85vh}.modal-overlay{align-items:center}}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.modal-header h2{font-size:1.1rem;font-weight:700}
+.modal-close{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--gray-100);color:var(--gray-600);font-size:1.2rem;transition:var(--transition)}
+.modal-close:hover{background:var(--gray-200)}
+.modal-body{padding:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.85rem;font-weight:600;color:var(--gray-700);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:var(--radius);font-size:.9rem;transition:var(--transition)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.form-group textarea{resize:vertical;min-height:60px}
+.photo-upload{display:flex;gap:8px;flex-wrap:wrap}
+.photo-upload-btn{display:flex;align-items:center;gap:6px;padding:10px 16px;border:2px dashed var(--gray-300);border-radius:var(--radius);color:var(--gray-500);font-size:.85rem;cursor:pointer;transition:var(--transition)}
+.photo-upload-btn:hover{border-color:var(--primary);color:var(--primary)}
+.photo-preview{width:80px;height:80px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--gray-200)}
+.submit-btn{width:100%;padding:12px;background:var(--primary);color:#fff;border-radius:var(--radius);font-size:1rem;font-weight:600;transition:var(--transition)}
+.submit-btn:hover{background:var(--primary-hover)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* POC chips */
+.poc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.poc-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--primary-light);color:var(--primary);border-radius:20px;font-size:.75rem;font-weight:500}
+.poc-chip button{background:none;color:var(--primary);font-size:.85rem;padding:0;line-height:1}
+.poc-add{display:flex;gap:6px;margin-top:6px}
+.poc-add input{flex:1;padding:6px 10px;border:1px solid var(--gray-200);border-radius:var(--radius);font-size:.85rem}
+.poc-add button{padding:6px 12px;background:var(--primary);color:#fff;border-radius:var(--radius);font-size:.8rem;font-weight:500;white-space:nowrap}
+
+/* Completed tab */
+.completed-header{text-align:center;padding:24px 16px;margin-bottom:16px}
+.completed-header h2{font-size:1.5rem;margin-bottom:4px}
+.completed-header p{color:var(--gray-500);font-size:.9rem}
+.celebration-card{border:2px solid var(--green-border);background:var(--green-bg)}
+.reactions{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.reaction-btn{padding:4px 8px;border-radius:20px;font-size:.8rem;background:var(--gray-100);border:1px solid var(--gray-200);transition:var(--transition);display:flex;align-items:center;gap:3px}
+.reaction-btn:hover{background:var(--primary-light);border-color:var(--primary)}
+.reaction-btn.active{background:var(--primary-light);border-color:var(--primary)}
+.reaction-count{font-size:.7rem;color:var(--gray-600);font-weight:600}
+
+/* Chat */
+.chat-section{border-top:1px solid var(--gray-200);padding:12px 16px}
+.chat-toggle{font-size:.8rem;color:var(--primary);font-weight:500;background:none;padding:4px 0}
+.chat-messages{margin-top:8px;max-height:200px;overflow-y:auto}
+.chat-msg{padding:6px 10px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:6px;font-size:.8rem}
+.chat-msg-author{font-weight:600;color:var(--gray-700)}
+.chat-msg-text{color:var(--gray-600);margin-top:2px}
+.chat-msg-time{font-size:.7rem;color:var(--gray-400);margin-top:2px}
+.chat-input{display:flex;gap:6px;margin-top:8px}
+.chat-input input{flex:1;padding:8px 10px;border:1px solid var(--gray-200);border-radius:var(--radius);font-size:.8rem}
+.chat-input button{padding:8px 14px;background:var(--primary);color:#fff;border-radius:var(--radius);font-size:.8rem;font-weight:500}
+
+/* Dashboard */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);border:1px solid var(--gray-200);text-align:center}
+.stat-number{font-size:2rem;font-weight:700;color:var(--primary)}
+.stat-label{font-size:.8rem;color:var(--gray-500);margin-top:4px}
+.chart-section{background:#fff;border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);border:1px solid var(--gray-200);margin-bottom:16px}
+.chart-section h3{font-size:1rem;font-weight:600;margin-bottom:12px}
+.bar-chart{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-label{width:60px;font-size:.75rem;color:var(--gray-600);text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:24px;background:var(--gray-100);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease;display:flex;align-items:center;padding-left:8px;font-size:.7rem;color:#fff;font-weight:600}
+.bar-count{font-size:.75rem;color:var(--gray-500);width:30px;text-align:left;flex-shrink:0}
+
+/* Member registry modal */
+.member-list{margin-top:8px}
+.member-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:4px}
+.member-item span{font-size:.85rem}
+.member-item button{color:var(--red);background:none;font-size:.9rem}
+
+/* Empty state */
+.empty-state{text-align:center;padding:48px 16px;color:var(--gray-400)}
+.empty-state .icon{font-size:3rem;margin-bottom:12px}
+.empty-state p{font-size:.9rem}
+
+/* Category colors */
+.cat-seiri{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.cat-seiton{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+.cat-seiso{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.cat-seiketsu{background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe}
+.cat-shitsuke{background:#fce7f3;color:#9d174d;border:1px solid #fbcfe8}
+
+/* Responsive */
+@media(max-width:480px){
+  .header-inner{padding:10px 12px}
+  .header h1{font-size:1.1rem}
+  .nav button{padding:6px 10px;font-size:.8rem}
+  .main{padding:12px}
+  .card-body{padding:12px}
+  .card-photo,.card-photo-placeholder{width:44px;height:44px}
+}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease}
+@keyframes confetti{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(-20px) rotate(360deg)}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <h1>📋 5S Action Tracker</h1>
+    <nav class="nav">
+      <button class="active" data-view="list">Action一覧</button>
+      <button data-view="completed">🎉完了済み</button>
+      <button data-view="dashboard">ダッシュボード</button>
+    </nav>
+    <div class="site-selector">
+      <label>DS Site:</label>
+      <select id="siteSelect">
+        <option value="all">全サイト</option>
+        <option value="NRT1">NRT1</option>
+        <option value="NRT2">NRT2</option>
+        <option value="NRT5">NRT5</option>
+        <option value="KIX1">KIX1</option>
+        <option value="KIX2">KIX2</option>
+        <option value="FUK1">FUK1</option>
+        <option value="HND1">HND1</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<main class="main" id="app"></main>
+
+<!-- Create/Edit Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">5S Actionを追加</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="actionForm" onsubmit="handleSubmit(event)">
+        <input type="hidden" id="editId">
+        <div class="form-group">
+          <label>タイトル *</label>
+          <input type="text" id="formTitle" placeholder="アクション内容を入力" required>
+        </div>
+        <div class="form-group">
+          <label>カテゴリー</label>
+          <select id="formCategory">
+            <option value="整理">整理 (Seiri)</option>
+            <option value="整頓">整頓 (Seiton)</option>
+            <option value="清掃">清掃 (Seiso)</option>
+            <option value="清潔">清潔 (Seiketsu)</option>
+            <option value="躾">躾 (Shitsuke)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ステータス</label>
+          <select id="formStatus">
+            <option value="未着手">未着手</option>
+            <option value="作業中">作業中</option>
+            <option value="作業完了">作業完了</option>
+            <option value="完了">完了</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>期限</label>
+          <input type="date" id="formDueDate">
+        </div>
+        <div class="form-group">
+          <label>DS Site</label>
+          <select id="formSite">
+            <option value="">未選択</option>
+            <option value="NRT1">NRT1</option>
+            <option value="NRT2">NRT2</option>
+            <option value="NRT5">NRT5</option>
+            <option value="KIX1">KIX1</option>
+            <option value="KIX2">KIX2</option>
+            <option value="FUK1">FUK1</option>
+            <option value="HND1">HND1</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>担当者 (POC)</label>
+          <div class="poc-chips" id="pocChips"></div>
+          <div class="poc-add">
+            <input type="text" id="pocInput" placeholder="名前を入力" list="memberList">
+            <datalist id="memberList"></datalist>
+            <button type="button" onclick="addPoc()">追加</button>
+          </div>
+          <div style="margin-top:8px">
+            <button type="button" style="font-size:.75rem;color:var(--gray-500);background:none;text-decoration:underline" onclick="openMemberModal()">メンバー管理</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>写真</label>
+          <div class="photo-upload">
+            <label class="photo-upload-btn">
+              📷 カメラ
+              <input type="file" accept="image/*" capture="environment" onchange="handlePhoto(event)" style="display:none">
+            </label>
+            <label class="photo-upload-btn">
+              🖼️ ファイル
+              <input type="file" accept="image/*" onchange="handlePhoto(event)" style="display:none">
+            </label>
+          </div>
+          <img id="photoPreview" class="photo-preview" style="display:none;margin-top:8px">
+        </div>
+        <button type="submit" class="submit-btn">保存する</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Member Registry Modal -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>メンバー管理</h2>
+      <button class="modal-close" onclick="closeMemberModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="poc-add" style="margin-bottom:12px">
+        <input type="text" id="newMemberInput" placeholder="新しいメンバー名">
+        <button type="button" onclick="addMember()">登録</button>
+      </div>
+      <div class="member-list" id="memberListDisplay"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail/Chat Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="detailTitle">詳細</h2>
+      <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<script>
+// ===== DATA LAYER =====
+const STORAGE_KEY = '5s_tracker_data';
+const MEMBERS_KEY = '5s_tracker_members';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveData(items) { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }
+function loadMembers() {
+  try { return JSON.parse(localStorage.getItem(MEMBERS_KEY)) || []; }
+  catch { return []; }
+}
+function saveMembers(m) { localStorage.setItem(MEMBERS_KEY, JSON.stringify(m)); }
+
+let items = loadData();
+let members = loadMembers();
+let currentView = 'list';
+let currentSite = 'all';
+let editingId = null;
+let formPocs = [];
+let formPhoto = '';
+
+// ===== STATUS & CATEGORY HELPERS =====
+const STATUS_MAP = {
+  '未着手': { color: 'red', label: '未着手' },
+  '作業中': { color: 'amber', label: '作業中' },
+  '作業完了': { color: 'blue', label: '作業完了' },
+  '完了': { color: 'green', label: '完了' }
+};
+const CATEGORY_MAP = {
+  '整理': 'cat-seiri', '整頓': 'cat-seiton', '清掃': 'cat-seiso',
+  '清潔': 'cat-seiketsu', '躾': 'cat-shitsuke'
+};
+
+function getStatusClass(status) { return STATUS_MAP[status]?.color || 'red'; }
+function getCategoryClass(cat) { return CATEGORY_MAP[cat] || 'cat-seiri'; }
+
+// ===== NAVIGATION =====
+document.querySelectorAll('.nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    render();
+  });
+});
+
+document.getElementById('siteSelect').addEventListener('change', (e) => {
+  currentSite = e.target.value;
+  render();
+});
+
+// ===== RENDER =====
+function render() {
+  const app = document.getElementById('app');
+  const filtered = currentSite === 'all' ? items : items.filter(i => i.site === currentSite);
+
+  if (currentView === 'list') renderList(app, filtered);
+  else if (currentView === 'completed') renderCompleted(app, filtered);
+  else if (currentView === 'dashboard') renderDashboard(app, filtered);
+}
+
+function renderList(app, filtered) {
+  const active = filtered.filter(i => i.status !== '完了');
+  let html = `<button class="add-btn" onclick="openModal()">➕ 5S Actionを追加する</button>`;
+  if (active.length === 0) {
+    html += `<div class="empty-state"><div class="icon">📋</div><p>アクションアイテムがありません</p></div>`;
+  } else {
+    active.forEach(item => { html += renderCard(item, false); });
+  }
+  app.innerHTML = html;
+}
+
+function renderCompleted(app, filtered) {
+  const done = filtered.filter(i => i.status === '完了');
+  let html = `<div class="completed-header"><h2>🎉 完了済みアクション</h2><p>お疲れ様でした！完了したアクションの一覧です</p></div>`;
+  if (done.length === 0) {
+    html += `<div class="empty-state"><div class="icon">🎉</div><p>まだ完了したアクションはありません</p></div>`;
+  } else {
+    done.forEach(item => { html += renderCard(item, true); });
+  }
+  app.innerHTML = html;
+}
+
+function renderCard(item, isCelebration) {
+  const sc = getStatusClass(item.status);
+  const cc = getCategoryClass(item.category);
+  const photoHtml = item.photo
+    ? `<img src="${item.photo}" class="card-photo" alt="photo">`
+    : `<div class="card-photo-placeholder">📷</div>`;
+  const dueHtml = item.dueDate ? `<span class="card-due">📅 ${item.dueDate}</span>` : '';
+  const pocHtml = item.pocs && item.pocs.length > 0
+    ? `<span class="card-pocs">👤 ${item.pocs.join(', ')}</span>` : '';
+  const siteHtml = item.site ? `<span class="badge badge-blue">${item.site}</span>` : '';
+
+  let reactionsHtml = '';
+  if (isCelebration) {
+    const reactions = item.reactions || {};
+    reactionsHtml = `<div class="reactions">
+      ${['❤️','👍','✨','🎉'].map(emoji => {
+        const count = reactions[emoji] || 0;
+        const active = reactions[emoji + '_active'] ? 'active' : '';
+        return `<button class="reaction-btn ${active}" onclick="toggleReaction('${item.id}','${emoji}')">
+          ${emoji}${count > 0 ? `<span class="reaction-count">${count}</span>` : ''}
+        </button>`;
+      }).join('')}
+    </div>`;
+  }
+
+  const chatCount = (item.comments || []).length;
+  const chatBtnHtml = `<button onclick="openDetail('${item.id}')" style="font-size:.75rem;color:var(--primary);background:none;margin-top:6px">💬 コメント${chatCount > 0 ? ` (${chatCount})` : ''}</button>`;
+
+  return `<div class="card fade-in ${isCelebration ? 'celebration-card' : ''}">
+    <div class="card-body">
+      ${photoHtml}
+      <div class="card-content">
+        <div class="card-title">${escHtml(item.title)}</div>
+        <div class="card-meta">
+          <select class="status-select status-${sc}" onchange="changeStatus('${item.id}', this.value)">
+            ${Object.keys(STATUS_MAP).map(s => `<option value="${s}" ${s===item.status?'selected':''}>${s}</option>`).join('')}
+          </select>
+          <span class="badge category-badge ${cc}">${item.category}</span>
+          ${siteHtml}
+        </div>
+        <div class="card-meta">${dueHtml} ${pocHtml}</div>
+        ${reactionsHtml}
+        ${chatBtnHtml}
+      </div>
+      <div class="card-actions">
+        <button onclick="editItem('${item.id}')" title="編集">✏️</button>
+        <button class="delete-btn" onclick="deleteItem('${item.id}')" title="削除">🗑️</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderDashboard(app, filtered) {
+  const total = filtered.length;
+  const byStatus = {};
+  Object.keys(STATUS_MAP).forEach(s => byStatus[s] = 0);
+  filtered.forEach(i => { byStatus[i.status] = (byStatus[i.status] || 0) + 1; });
+
+  const byCategory = {};
+  filtered.forEach(i => { byCategory[i.category] = (byCategory[i.category] || 0) + 1; });
+
+  const overdue = filtered.filter(i => i.dueDate && i.status !== '完了' && new Date(i.dueDate) < new Date()).length;
+
+  let html = `<div class="stats-grid">
+    <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">全アクション</div></div>
+    <div class="stat-card"><div class="stat-number" style="color:var(--green)">${byStatus['完了']}</div><div class="stat-label">完了</div></div>
+    <div class="stat-card"><div class="stat-number" style="color:var(--amber)">${byStatus['作業中']}</div><div class="stat-label">作業中</div></div>
+    <div class="stat-card"><div class="stat-number" style="color:var(--red)">${overdue}</div><div class="stat-label">期限超過</div></div>
+  </div>`;
+
+  // Status chart
+  html += `<div class="chart-section"><h3>ステータス別</h3><div class="bar-chart">`;
+  Object.entries(byStatus).forEach(([status, count]) => {
+    const pct = total > 0 ? (count / total * 100) : 0;
+    const color = `var(--${getStatusClass(status)})`;
+    html += `<div class="bar-row">
+      <span class="bar-label">${status}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}">${count > 0 ? count : ''}</div></div>
+      <span class="bar-count">${count}</span>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // Category chart
+  html += `<div class="chart-section"><h3>カテゴリー別</h3><div class="bar-chart">`;
+  Object.entries(byCategory).forEach(([cat, count]) => {
+    const pct = total > 0 ? (count / total * 100) : 0;
+    html += `<div class="bar-row">
+      <span class="bar-label">${cat}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--primary)">${count > 0 ? count : ''}</div></div>
+      <span class="bar-count">${count}</span>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  app.innerHTML = html;
+}
+
+// ===== MODAL MANAGEMENT =====
+function openModal(id) {
+  editingId = id || null;
+  formPocs = [];
+  formPhoto = '';
+  document.getElementById('editId').value = '';
+  document.getElementById('formTitle').value = '';
+  document.getElementById('formCategory').value = '整理';
+  document.getElementById('formStatus').value = '未着手';
+  document.getElementById('formDueDate').value = '';
+  document.getElementById('formSite').value = '';
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('modalTitle').textContent = '5S Actionを追加';
+
+  if (id) {
+    const item = items.find(i => i.id === id);
+    if (item) {
+      document.getElementById('modalTitle').textContent = 'アクションを編集';
+      document.getElementById('formTitle').value = item.title;
+      document.getElementById('formCategory').value = item.category;
+      document.getElementById('formStatus').value = item.status;
+      document.getElementById('formDueDate').value = item.dueDate || '';
+      document.getElementById('formSite').value = item.site || '';
+      formPocs = [...(item.pocs || [])];
+      formPhoto = item.photo || '';
+      if (formPhoto) {
+        document.getElementById('photoPreview').src = formPhoto;
+        document.getElementById('photoPreview').style.display = 'block';
+      }
+    }
+  }
+  renderPocChips();
+  updateMemberDatalist();
+  document.getElementById('createModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('createModal').classList.remove('open');
+  editingId = null;
+}
+
+function openMemberModal() {
+  renderMemberList();
+  document.getElementById('memberModal').classList.add('open');
+}
+function closeMemberModal() { document.getElementById('memberModal').classList.remove('open'); }
+
+function openDetail(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('detailTitle').textContent = item.title;
+  renderDetailBody(item);
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeDetailModal() { document.getElementById('detailModal').classList.remove('open'); }
+
+// ===== FORM HANDLING =====
+function handleSubmit(e) {
+  e.preventDefault();
+  const title = document.getElementById('formTitle').value.trim();
+  if (!title) return;
+
+  const data = {
+    title,
+    category: document.getElementById('formCategory').value,
+    status: document.getElementById('formStatus').value,
+    dueDate: document.getElementById('formDueDate').value,
+    site: document.getElementById('formSite').value,
+    pocs: [...formPocs],
+    photo: formPhoto
+  };
+
+  if (editingId) {
+    const idx = items.findIndex(i => i.id === editingId);
+    if (idx !== -1) {
+      items[idx] = { ...items[idx], ...data };
+    }
+  } else {
+    items.push({
+      id: generateId(),
+      ...data,
+      reactions: {},
+      comments: [],
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  saveData(items);
+  closeModal();
+  render();
+}
+
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    // Resize image to save localStorage space
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 600;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = h * MAX / w; w = MAX; }
+        else { w = w * MAX / h; h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      formPhoto = canvas.toDataURL('image/jpeg', 0.7);
+      document.getElementById('photoPreview').src = formPhoto;
+      document.getElementById('photoPreview').style.display = 'block';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== POC MANAGEMENT =====
+function addPoc() {
+  const input = document.getElementById('pocInput');
+  const name = input.value.trim();
+  if (name && !formPocs.includes(name)) {
+    formPocs.push(name);
+    // Auto-add to members if not exists
+    if (!members.includes(name)) {
+      members.push(name);
+      saveMembers(members);
+    }
+    renderPocChips();
+  }
+  input.value = '';
+}
+
+function removePoc(name) {
+  formPocs = formPocs.filter(p => p !== name);
+  renderPocChips();
+}
+
+function renderPocChips() {
+  const container = document.getElementById('pocChips');
+  container.innerHTML = formPocs.map(p =>
+    `<span class="poc-chip">${escHtml(p)}<button type="button" onclick="removePoc('${escAttr(p)}')">&times;</button></span>`
+  ).join('');
+}
+
+function updateMemberDatalist() {
+  document.getElementById('memberList').innerHTML = members.map(m => `<option value="${escAttr(m)}">`).join('');
+}
+
+// ===== MEMBER REGISTRY =====
+function addMember() {
+  const input = document.getElementById('newMemberInput');
+  const name = input.value.trim();
+  if (name && !members.includes(name)) {
+    members.push(name);
+    saveMembers(members);
+    renderMemberList();
+  }
+  input.value = '';
+}
+
+function removeMember(name) {
+  members = members.filter(m => m !== name);
+  saveMembers(members);
+  renderMemberList();
+}
+
+function renderMemberList() {
+  const container = document.getElementById('memberListDisplay');
+  if (members.length === 0) {
+    container.innerHTML = '<p style="color:var(--gray-400);font-size:.85rem;text-align:center;padding:16px">メンバーが登録されていません</p>';
+    return;
+  }
+  container.innerHTML = members.map(m =>
+    `<div class="member-item"><span>${escHtml(m)}</span><button onclick="removeMember('${escAttr(m)}')">&times;</button></div>`
+  ).join('');
+}
+
+// ===== ACTIONS =====
+function changeStatus(id, newStatus) {
+  const item = items.find(i => i.id === id);
+  if (item) {
+    item.status = newStatus;
+    saveData(items);
+    render();
+  }
+}
+
+function editItem(id) { openModal(id); }
+
+function deleteItem(id) {
+  if (!confirm('このアクションを削除しますか？')) return;
+  items = items.filter(i => i.id !== id);
+  saveData(items);
+  render();
+}
+
+function toggleReaction(id, emoji) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  if (!item.reactions) item.reactions = {};
+  const activeKey = emoji + '_active';
+  if (item.reactions[activeKey]) {
+    item.reactions[emoji] = Math.max(0, (item.reactions[emoji] || 0) - 1);
+    item.reactions[activeKey] = false;
+  } else {
+    item.reactions[emoji] = (item.reactions[emoji] || 0) + 1;
+    item.reactions[activeKey] = true;
+  }
+  saveData(items);
+  render();
+}
+
+// ===== DETAIL / CHAT =====
+function renderDetailBody(item) {
+  const comments = item.comments || [];
+  let html = '';
+  if (item.photo) {
+    html += `<img src="${item.photo}" style="width:100%;max-height:300px;object-fit:contain;border-radius:var(--radius);margin-bottom:16px">`;
+  }
+  html += `<div style="margin-bottom:16px">
+    <p><strong>カテゴリー:</strong> ${item.category}</p>
+    <p><strong>ステータス:</strong> ${item.status}</p>
+    ${item.dueDate ? `<p><strong>期限:</strong> ${item.dueDate}</p>` : ''}
+    ${item.site ? `<p><strong>Site:</strong> ${item.site}</p>` : ''}
+    ${item.pocs && item.pocs.length ? `<p><strong>担当者:</strong> ${item.pocs.join(', ')}</p>` : ''}
+  </div>`;
+
+  html += `<div class="chat-section" style="border-top:none;padding:0">
+    <h3 style="font-size:.9rem;font-weight:600;margin-bottom:8px">💬 コメント</h3>
+    <div class="chat-messages" id="chatMessages">`;
+  if (comments.length === 0) {
+    html += `<p style="color:var(--gray-400);font-size:.8rem;text-align:center;padding:12px">コメントはまだありません</p>`;
+  } else {
+    comments.forEach(c => {
+      html += `<div class="chat-msg">
+        <div class="chat-msg-author">${escHtml(c.author)}</div>
+        <div class="chat-msg-text">${escHtml(c.text)}</div>
+        <div class="chat-msg-time">${formatTime(c.time)}</div>
+      </div>`;
+    });
+  }
+  html += `</div>
+    <div class="chat-input">
+      <input type="text" id="chatAuthor" placeholder="名前" style="max-width:80px">
+      <input type="text" id="chatText" placeholder="コメントを入力...">
+      <button type="button" onclick="addComment('${item.id}')">送信</button>
+    </div>
+  </div>`;
+
+  document.getElementById('detailBody').innerHTML = html;
+}
+
+function addComment(id) {
+  const author = document.getElementById('chatAuthor').value.trim() || '匿名';
+  const text = document.getElementById('chatText').value.trim();
+  if (!text) return;
+
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  if (!item.comments) item.comments = [];
+  item.comments.push({ author, text, time: new Date().toISOString() });
+  saveData(items);
+  renderDetailBody(item);
+
+  // Scroll to bottom
+  const msgs = document.getElementById('chatMessages');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ===== UTILITIES =====
+function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escAttr(s) { return s.replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+}
+
+// Close modals on overlay click
+['createModal','memberModal','detailModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.classList.remove('open');
+    }
+  });
+});
+
+// POC input enter key
+document.getElementById('pocInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addPoc(); }
+});
+document.getElementById('newMemberInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addMember(); }
+});
+
+// Initial render
+render();
+</script>
+</body>
+</html>
