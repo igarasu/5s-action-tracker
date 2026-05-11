@@ -279,7 +279,7 @@ io.on('connection', (socket) => {
 // ============================================================
 
 const path = require('path');
-const publicDir = path.join(__dirname, 'public');
+const publicDir = __dirname;
 app.use(express.static(publicDir));
 
 // ============================================================
